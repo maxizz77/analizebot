@@ -375,7 +375,9 @@ async def debug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     domains = [
         "https://api.bybit.com",
         "https://api.bytick.com",
-        "https://api.bytick.nl",
+        "https://api.bybit.nl",
+        "https://api.bybit.eu",
+        "https://api.bybit.id",
         "https://api.bybit-tr.com",
         "https://api.bybit.kz"
     ]
@@ -532,7 +534,9 @@ async def api_debug(request):
     domains = [
         "https://api.bybit.com",
         "https://api.bytick.com",
-        "https://api.bytick.nl",
+        "https://api.bybit.nl",
+        "https://api.bybit.eu",
+        "https://api.bybit.id",
         "https://api.bybit-tr.com",
         "https://api.bybit.kz"
     ]
