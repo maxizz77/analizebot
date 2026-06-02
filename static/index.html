@@ -939,14 +939,17 @@
             if (!symbol) return;
 
             if (!symbol.endsWith('USDT')) {
-                if (allSymbols.includes(`${symbol}USDT`)) {
+                if (allSymbols.length > 0) {
+                    if (allSymbols.includes(`${symbol}USDT`)) {
+                        symbol = `${symbol}USDT`;
+                    }
+                } else {
                     symbol = `${symbol}USDT`;
-                } else if (!allSymbols.includes(symbol)) {
-                    showToast(`Пару ${symbol} не знайдено на Bybit`, true);
-                    return;
                 }
-            } else if (!allSymbols.includes(symbol)) {
-                showToast(`Пару ${symbol} не знайдено`, true);
+            }
+
+            if (allSymbols.length > 0 && !allSymbols.includes(symbol)) {
+                showToast(`Пару ${symbol} не знайдено на Bybit`, true);
                 return;
             }
 

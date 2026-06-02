@@ -474,6 +474,21 @@ async def api_add_coin(request):
         data = await request.json()
         chat_id = int(data.get("chat_id"))
         symbol = data.get("symbol").upper().strip()
+        
+        # Валідація наявності монети на біржі
+        active_symbols = bybit.get_active_symbols("linear")
+        if not active_symbols:
+            price = bybit.get_current_price(symbol, "linear")
+            is_valid = price is not None
+        else:
+            is_valid = symbol in active_symbols
+            if not is_valid and f"{symbol}USDT" in active_symbols:
+                symbol = f"{symbol}USDT"
+                is_valid = True
+                
+        if not is_valid:
+            return web.json_response({"status": "error", "message": f"Ф'ючерс {symbol} не знайдено на Bybit"}, status=400)
+            
         db.add_coin(chat_id, symbol)
         logger.info(f"[API] Користувач {chat_id} додав монету {symbol}")
         return web.json_response({"status": "ok"})
