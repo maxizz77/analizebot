@@ -14,7 +14,15 @@ def get_active_symbols(category="linear"):
     params = {"category": category}
     try:
         response = requests.get(url, params=params, timeout=10)
-        data = response.json()
+        if response.status_code != 200:
+            logger.warning(f"Не вдалося отримати інструменти Bybit: HTTP {response.status_code}")
+            return set()
+        try:
+            data = response.json()
+        except ValueError:
+            logger.warning("Отримано некоректний JSON-відповідь від Bybit instruments-info")
+            return set()
+            
         if data.get("retCode") == 0:
             symbols = {
                 item["symbol"].upper() 
@@ -38,7 +46,15 @@ def get_current_price(symbol, category="linear"):
     params = {"category": category, "symbol": symbol}
     try:
         response = requests.get(url, params=params, timeout=10)
-        data = response.json()
+        if response.status_code != 200:
+            logger.warning(f"Не вдалося отримати ціну {symbol} з Bybit: HTTP {response.status_code}")
+            return None
+        try:
+            data = response.json()
+        except ValueError:
+            logger.warning(f"Отримано некоректний JSON-відповідь від Bybit для ціни {symbol}")
+            return None
+            
         if data.get("retCode") == 0 and data["result"]["list"]:
             ticker = data["result"]["list"][0]
             return float(ticker["lastPrice"])
@@ -70,7 +86,15 @@ def calculate_twap_and_volume(symbol, category="linear", interval="1", limit=240
     
     try:
         response = requests.get(url, params=params, timeout=10)
-        data = response.json()
+        if response.status_code != 200:
+            logger.warning(f"Не вдалося отримати свічки для {symbol} з Bybit: HTTP {response.status_code}")
+            return None
+        try:
+            data = response.json()
+        except ValueError:
+            logger.warning(f"Отримано некоректний JSON-відповідь від Bybit klines для {symbol}")
+            return None
+            
         if data.get("retCode") != 0 or not data["result"]["list"]:
             logger.error(f"Помилка Bybit API при отриманні klines {symbol}: {data.get('retMsg')}")
             return None

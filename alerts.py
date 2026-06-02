@@ -39,7 +39,15 @@ async def check_alerts(bot: Bot):
         
         try:
             response = requests.get(url, params=params, timeout=10)
-            data = response.json()
+            if response.status_code != 200:
+                logger.warning(f"Не вдалося отримати дані з Bybit для {symbol}: HTTP {response.status_code}")
+                continue
+            try:
+                data = response.json()
+            except ValueError:
+                logger.warning(f"Отримано некоректний JSON-відповідь від Bybit для {symbol} (можливо, блокування IP або Cloudflare)")
+                continue
+                
             if data.get("retCode") != 0 or not data["result"]["list"]:
                 logger.error(f"Не вдалося отримати свічки для {symbol} у фоновому режимі: {data.get('retMsg')}")
                 continue
@@ -149,7 +157,15 @@ async def check_reports(bot: Bot):
             }
             try:
                 response = requests.get(url, params=params, timeout=10)
-                data = response.json()
+                if response.status_code != 200:
+                    logger.warning(f"Не вдалося отримати дані з Bybit для звіту {symbol}: HTTP {response.status_code}")
+                    continue
+                try:
+                    data = response.json()
+                except ValueError:
+                    logger.warning(f"Отримано некоректний JSON-відповідь від Bybit для звіту {symbol} (можливо, блокування IP)")
+                    continue
+                    
                 if data.get("retCode") != 0 or not data["result"]["list"]:
                     logger.error(f"Не вдалося отримати свічки для звіту {symbol}: {data.get('retMsg')}")
                     continue
