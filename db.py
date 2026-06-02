@@ -154,5 +154,20 @@ def update_last_report_time(chat_id, symbol, timestamp):
         """, (timestamp, chat_id, symbol))
         conn.commit()
 
+def update_coin_settings(chat_id, symbol, volume_mult, twap_pct, price_report_interval):
+    """Оновлює всі налаштування відстеження для монети за один запит."""
+    symbol = symbol.strip().upper()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE tracked_coins 
+            SET volume_threshold_multiplier = ?, 
+                twap_alert_pct = ?, 
+                price_report_interval = ?,
+                last_report_sent_time = 0
+            WHERE chat_id = ? AND symbol = ?
+        """, (volume_mult, twap_pct, price_report_interval, chat_id, symbol))
+        conn.commit()
+
 # Ініціалізуємо БД при першому завантаженні модуля
 init_db()

@@ -1,7 +1,9 @@
 import logging
 import os
 import asyncio
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+import json
+from aiohttp import web
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, MenuButtonWebApp
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -18,7 +20,8 @@ from dotenv import load_dotenv
 # Завантажуємо конфігурацію з .env
 load_dotenv()
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL_SECONDS", "300"))
+CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL_SECONDS", "60"))
+PUBLIC_URL = os.getenv("PUBLIC_URL", "")
 
 # Налаштування логування
 logging.basicConfig(
@@ -32,26 +35,39 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     db.add_user(chat_id)
     
+    # Спробуємо встановити кнопку меню WebApp
+    if PUBLIC_URL:
+        try:
+            await context.bot.set_chat_menu_button(
+                chat_id=chat_id,
+                menu_button=MenuButtonWebApp(text="Застосунок", web_app=WebAppInfo(url=PUBLIC_URL))
+            )
+        except Exception as e:
+            logger.warning(f"Не вдалося встановити кнопку меню: {e}")
+            
     welcome_text = (
         "👋 **Привіт! Я ваш персональний Bybit Futures Activity Bot.**\n\n"
         "Я вмію відстежувати активність обраних вами ф'ючерсів (USDT Perpetual) на біржі Bybit та сповіщати про аномалії.\n\n"
         "📈 **Що саме я роблю:**\n"
         "1. **Моніторинг об'ємів (1м)**: Повідомляю кожної хвилини, якщо об'єм торгів різко зріс порівняно із середнім значенням.\n"
         "2. **Контроль TWAP (4г)**: Розраховую середньозважену за часом ціну (240 хвилинних свічок) та повідомляю про сильні відхилення.\n"
-        "3. **Індивідуальні звіти**: Можу регулярно надсилати вам звіт про зміну ціни за обраний проміжок часу (наприклад, кожні 20хв).\n"
-        "4. **Індивідуальний список**: Ви самі обираєте ф'ючерси для відстеження.\n\n"
+        "3. **Індивідуальні звіти**: Можу регулярно надсилати звіт про зміну ціни за обраний час (наприклад, кожні 20хв).\n"
+        "4. **Візуальний застосунок**: Ви можете керувати налаштуваннями через зручний графічний інтерфейс прямо в Telegram!\n\n"
         "📋 **Команди бота:**\n"
-        "/coins — Показати відстежувані ф'ючерси та керувати ними\n"
+        "/coins — Показати відстежувані ф'ючерси та налаштування\n"
         "/add [монета] — Додати ф'ючерс (наприклад, `/add BTCUSDT`)\n"
         "/remove [монета] — Видалити ф'ючерс (наприклад, `/remove BTCUSDT`)\n"
         "/twap [монета] — Отримати поточну TWAP за 4 години\n"
         "/volume [монета] — Отримати статистику 1м об'єму\n"
-        "/settings [монета] [об'єм] [twap_%] — Налаштувати індивідуальні пороги сповіщень\n"
+        "/settings [монета] [об'єм] [twap_%] — Налаштувати пороги сповіщень\n"
         "/report [монета] [хвилини] — Налаштувати регулярні звіти ціни (наприклад, `/report LAB 20`)\n\n"
-        "Натисніть кнопку нижче або напишіть `/coins`, щоб розпочати!"
+        "Натисніть кнопку нижче, щоб відкрити графічний застосунок або переглянути список монет!"
     )
     
-    keyboard = [[InlineKeyboardButton("📋 Мої монети", callback_data="list_coins")]]
+    keyboard = []
+    if PUBLIC_URL:
+        keyboard.append([InlineKeyboardButton("🌐 Відкрити застосунок", web_app=WebAppInfo(url=PUBLIC_URL))])
+    keyboard.append([InlineKeyboardButton("📋 Мої монети (текст)", callback_data="list_coins")])
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await update.message.reply_text(welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
@@ -66,22 +82,29 @@ async def coins_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not coins:
         message = (
             "📉 **Ваш список відстежуваних ф'ючерсів порожній.**\n\n"
-            "Ви можете додати монети за допомогою кнопки нижче або командою:\n"
+            "Ви можете додати монети через веб-застосунок нижче або командою:\n"
             "`/add назва_монети` (наприклад, `/add BTCUSDT`)."
         )
-        keyboard = [[InlineKeyboardButton("➕ Додати BTCUSDT", callback_data="add_default_btc")]]
+        keyboard = []
+        if PUBLIC_URL:
+            keyboard.append([InlineKeyboardButton("🌐 Відкрити застосунок", web_app=WebAppInfo(url=PUBLIC_URL))])
+        keyboard.append([InlineKeyboardButton("➕ Додати BTCUSDT", callback_data="add_default_btc")])
         reply_markup = InlineKeyboardMarkup(keyboard)
         await update.message.reply_text(message, reply_markup=reply_markup, parse_mode="Markdown")
         return
         
     message = "📋 **Ваші відстежувані ф'ючерси:**\n\n"
     keyboard = []
-    
+    if PUBLIC_URL:
+        keyboard.append([InlineKeyboardButton("🌐 Відкрити застосунок", web_app=WebAppInfo(url=PUBLIC_URL))])
+        
     for row in coins:
         sym = row[0]
         vol_mult = row[1]
         twap_pct = row[2]
-        message += f"• **{sym}** (1м Об'єм: `>{vol_mult}x`, TWAP: `>{twap_pct}%`)\n"
+        report_interval = row[3]
+        report_text = f"Звіт: {report_interval}м" if report_interval > 0 else "Звіт: вимк."
+        message += f"• **{sym}** (1м Об'єм: `>{vol_mult}x`, TWAP: `>{twap_pct}%`, {report_text})\n"
         
         # Створюємо кнопки для швидких дій
         keyboard.append([
@@ -90,7 +113,7 @@ async def coins_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             InlineKeyboardButton(f"🗑️ Видалити", callback_data=f"remove_{sym}")
         ])
         
-    message += "\n*Додати нову монету можна за допомогою:* `/add [СИМВОЛ]` (наприклад: `/add ETHUSDT`)"
+    message += "\n*Ви можете швидко відкрити графічний застосунок для налаштування повзунками.*"
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(message, reply_markup=reply_markup, parse_mode="Markdown")
 
@@ -105,13 +128,9 @@ async def add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     symbol = context.args[0].upper().strip()
     
-    # Тимчасове повідомлення про перевірку
     status_msg = await update.message.reply_text(f"⏳ Перевіряю ф'ючерс {symbol} на Bybit...")
-    
-    # Валідація через API Bybit
     active_symbols = bybit.get_active_symbols("linear")
     
-    # Якщо список порожній через помилку мережі, спробуємо перевірити через пряму ціну
     if not active_symbols:
         price = bybit.get_current_price(symbol, "linear")
         is_valid = price is not None
@@ -166,8 +185,6 @@ async def twap_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         symbol = context.args[0].upper().strip()
         
     status_msg = await update.message.reply_text(f"⏳ Отримую дані TWAP для {symbol}...")
-    
-    # 240 свічок по 1м = 4 години
     stats = bybit.calculate_twap_and_volume(symbol, limit=240)
     if not stats:
         await status_msg.edit_text(f"❌ Не вдалося отримати дані TWAP для {symbol}. Перевірте назву ф'ючерсу.")
@@ -199,9 +216,7 @@ async def volume_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         symbol = context.args[0].upper().strip()
         
     status_msg = await update.message.reply_text(f"⏳ Отримую статистику об'єму для {symbol}...")
-    
-    # limit=1000 для детального 1м аналізу об'єму
-    stats = bybit.calculate_twap_and_volume(symbol, limit=240) # Використаємо розрахунок з лімітом 240
+    stats = bybit.calculate_twap_and_volume(symbol, limit=240)
     if not stats:
         await status_msg.edit_text(f"❌ Не вдалося отримати дані об'єму для {symbol}. Перевірте назву ф'ючерсу.")
         return
@@ -290,7 +305,6 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Помилка! Інтервал не може бути меншим за 0.")
         return
 
-    # Розумне автодоповнення: якщо введено LAB, спробуємо знайти LAB або LABUSDT
     symbol = symbol_input
     active_symbols = bybit.get_active_symbols("linear")
     
@@ -305,11 +319,9 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
                 return
     else:
-        # Без активних символів просто додаємо USDT
         if not symbol.endswith("USDT"):
             symbol = f"{symbol}USDT"
             
-    # Перевіримо, чи монета вже відстежується користувачем. Якщо ні - додаємо її з дефолтними значеннями
     coins = db.get_tracked_coins(chat_id)
     tracked_symbols = [c[0] for c in coins]
     if symbol not in tracked_symbols and interval_minutes > 0:
@@ -338,24 +350,29 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
     
     if data == "list_coins":
-        # Перевикористовуємо coins_command
-        # Але оскільки coins_command надсилає нове повідомлення, ми перепишемо текст поточного
         coins = db.get_tracked_coins(chat_id)
         if not coins:
             message = (
                 "📉 **Ваш список відстежуваних ф'ючерсів порожній.**\n\n"
-                "Ви можете додати монети командою:\n"
+                "Ви можете додати монети через веб-застосунок або командою:\n"
                 "`/add назва_монети` (наприклад, `/add BTCUSDT`)."
             )
-            keyboard = [[InlineKeyboardButton("➕ Додати BTCUSDT", callback_data="add_default_btc")]]
+            keyboard = []
+            if PUBLIC_URL:
+                keyboard.append([InlineKeyboardButton("🌐 Відкрити застосунок", web_app=WebAppInfo(url=PUBLIC_URL))])
+            keyboard.append([InlineKeyboardButton("➕ Додати BTCUSDT", callback_data="add_default_btc")])
         else:
             message = "📋 **Ваші відстежувані ф'ючерси:**\n\n"
             keyboard = []
+            if PUBLIC_URL:
+                keyboard.append([InlineKeyboardButton("🌐 Відкрити застосунок", web_app=WebAppInfo(url=PUBLIC_URL))])
             for row in coins:
                 sym = row[0]
                 vol_mult = row[1]
                 twap_pct = row[2]
-                message += f"• **{sym}** (1м Об'єм: `>{vol_mult}x`, TWAP: `>{twap_pct}%`)\n"
+                report_interval = row[3]
+                report_text = f"Звіт: {report_interval}м" if report_interval > 0 else "Звіт: вимк."
+                message += f"• **{sym}** (1м Об'єм: `>{vol_mult}x`, TWAP: `>{twap_pct}%`, {report_text})\n"
                 keyboard.append([
                     InlineKeyboardButton(f"📊 TWAP {sym}", callback_data=f"twap_{sym}"),
                     InlineKeyboardButton(f"📈 Vol {sym}", callback_data=f"vol_{sym}"),
@@ -368,23 +385,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     elif data == "add_default_btc":
         db.add_coin(chat_id, "BTCUSDT")
-        await query.edit_message_text("✅ **BTCUSDT успішно додано!** Напишіть `/coins` для перегляду.", parse_mode="Markdown")
+        await query.edit_message_text("✅ **BTCUSDT успішно додано!** Напишіть `/coins` або відкрийте застосунок для перегляду.", parse_mode="Markdown")
         
     elif data.startswith("remove_"):
         symbol = data.split("_")[1]
         db.remove_coin(chat_id, symbol)
         
-        # Оновлюємо список
         coins = db.get_tracked_coins(chat_id)
         message = f"🗑️ Монету **{symbol}** видалено зі списку.\n\n"
         keyboard = []
+        if PUBLIC_URL:
+            keyboard.append([InlineKeyboardButton("🌐 Відкрити застосунок", web_app=WebAppInfo(url=PUBLIC_URL))])
         if coins:
             message += "📋 **Ваші відстежувані ф'ючерси:**\n\n"
             for row in coins:
                 sym = row[0]
                 vol_mult = row[1]
                 twap_pct = row[2]
-                message += f"• **{sym}** (1м Об'єм: `>{vol_mult}x`, TWAP: `>{twap_pct}%`)\n"
+                report_interval = row[3]
+                report_text = f"Звіт: {report_interval}м" if report_interval > 0 else "Звіт: вимк."
+                message += f"• **{sym}** (1м Об'єм: `>{vol_mult}x`, TWAP: `>{twap_pct}%`, {report_text})\n"
                 keyboard.append([
                     InlineKeyboardButton(f"📊 TWAP {sym}", callback_data=f"twap_{sym}"),
                     InlineKeyboardButton(f"📈 Vol {sym}", callback_data=f"vol_{sym}"),
@@ -393,7 +413,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message += "\n*Додати нову монету можна за допомогою:* `/add [СИМВОЛ]`"
         else:
             message += "📉 **Ваш список відстеження тепер порожній.**"
-            keyboard = [[InlineKeyboardButton("➕ Додати BTCUSDT", callback_data="add_default_btc")]]
+            keyboard.append([InlineKeyboardButton("➕ Додати BTCUSDT", callback_data="add_default_btc")])
             
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(message, reply_markup=reply_markup, parse_mode="Markdown")
@@ -428,13 +448,96 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await query.message.reply_text(msg, parse_mode="Markdown")
 
+# --- ВЕБ-СЕРВЕР API ДЛЯ MINI APP ---
+
+async def handle_index(request):
+    """Повертає головну сторінку веб-додатка"""
+    return web.FileResponse('./static/index.html')
+
+async def api_symbols(request):
+    """Повертає список активних пар Bybit ф'ючерсів"""
+    active = bybit.get_active_symbols("linear")
+    return web.json_response({"status": "ok", "symbols": list(active)})
+
+async def api_get_coins(request):
+    """Повертає відстежувані монети користувача"""
+    try:
+        chat_id = int(request.query.get("chat_id", 0))
+        coins = db.get_tracked_coins(chat_id)
+        return web.json_response({"status": "ok", "coins": coins})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=400)
+
+async def api_add_coin(request):
+    """Додає монету з веб-інтерфейсу"""
+    try:
+        data = await request.json()
+        chat_id = int(data.get("chat_id"))
+        symbol = data.get("symbol").upper().strip()
+        db.add_coin(chat_id, symbol)
+        logger.info(f"[API] Користувач {chat_id} додав монету {symbol}")
+        return web.json_response({"status": "ok"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=400)
+
+async def api_update_coin(request):
+    """Оновлює налаштування монети (об'єм, TWAP, звіти)"""
+    try:
+        data = await request.json()
+        chat_id = int(data.get("chat_id"))
+        symbol = data.get("symbol").upper().strip()
+        vol_mult = float(data.get("volume_mult"))
+        twap_pct = float(data.get("twap_pct"))
+        report_interval = int(data.get("price_report_interval"))
+        
+        db.update_coin_settings(chat_id, symbol, vol_mult, twap_pct, report_interval)
+        logger.info(f"[API] Користувач {chat_id} оновив налаштування для {symbol}")
+        return web.json_response({"status": "ok"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=400)
+
+async def api_delete_coin(request):
+    """Видаляє монету з веб-інтерфейсу"""
+    try:
+        data = await request.json()
+        chat_id = int(data.get("chat_id"))
+        symbol = data.get("symbol").upper().strip()
+        db.remove_coin(chat_id, symbol)
+        logger.info(f"[API] Користувач {chat_id} видалив монету {symbol}")
+        return web.json_response({"status": "ok"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=400)
+
+async def start_web_server():
+    """Запускає веб-сервер aiohttp"""
+    app = web.Application()
+    # Роутинг статики та API
+    app.router.add_get('/', handle_index)
+    app.router.add_get('/api/symbols', api_symbols)
+    app.router.add_get('/api/coins', api_get_coins)
+    app.router.add_post('/api/coins/add', api_add_coin)
+    app.router.add_post('/api/coins/update', api_update_coin)
+    app.router.add_post('/api/coins/delete', api_delete_coin)
+    
+    port = int(os.getenv("PORT", "8080"))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    logger.info(f"Веб-сервер API успішно запущено на порту {port}")
+
+# --- ІНІЦІАЛІЗАЦІЯ БОТА ТА СЕРВЕРУ ---
+
 async def post_init(application):
     """
     Ця функція запускається після ініціалізації бота
-    та запускає фоновий планувальник сповіщень.
+    та запускає фоновий планувальник сповіщень і веб-сервер.
     """
     # Запускаємо фонову перевірку в окремому асинхронному завданні (task)
     asyncio.create_task(alerts.start_alert_scheduler(application.bot, CHECK_INTERVAL))
+    
+    # Запускаємо веб-сервер у фоновому режимі
+    asyncio.create_task(start_web_server())
 
 def main():
     """Точка входу"""

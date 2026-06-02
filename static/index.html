@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bybit Activity Monitor Settings</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --panel-bg: rgba(20, 26, 38, 0.6);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-color: #f1f3f5;
+            --text-muted: #868e96;
+            --primary: #4dabf7;
+            --primary-grad: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --accent: #f59f00;
+            --danger: #fa5252;
+            --success: #12b886;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Адаптація під кольори теми Telegram */
+        body.tg-theme {
+            --bg-color: var(--tg-theme-bg-color, #0b0e14);
+            --text-color: var(--tg-theme-text-color, #f1f3f5);
+            --primary: var(--tg-theme-button-color, #4dabf7);
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 16px;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 10% 20%, rgba(90, 120, 255, 0.05) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            background: linear-gradient(90deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        /* Форма додавання монет */
+        .add-form {
+            display: flex;
+            position: relative;
+            gap: 8px;
+        }
+
+        .input-group {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-color);
+            font-size: 14px;
+            font-weight: 500;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #ffffff;
+        }
+
+        .btn-primary {
+            background: var(--primary-grad);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        .btn-danger {
+            background: rgba(250, 82, 82, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(250, 82, 82, 0.2);
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        .btn-danger:active {
+            background: rgba(250, 82, 82, 0.25);
+        }
+
+        /* Автозаповнення */
+        .suggestions {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #141a26;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            transition: background 0.15s;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--primary);
+        }
+
+        /* Список відстежуваних монет */
+        .coin-list {
+            margin-top: 10px;
+        }
+
+        .coin-card {
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.01);
+            padding: 16px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .coin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .coin-title {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffffff;
+        }
+
+        .coin-title span.tag {
+            font-size: 10px;
+            background: rgba(77, 171, 247, 0.15);
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        /* Повзунки та селектори */
+        .setting-row {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .setting-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .setting-label {
+            color: var(--text-muted);
+        }
+
+        .setting-value {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(77, 171, 247, 0.5);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.2);
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-color);
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 10px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .badge-alert {
+            background: rgba(250, 82, 82, 0.1) !important;
+            color: var(--danger) !important;
+        }
+
+        /* Сповіщення (Toast) */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(20, 26, 38, 0.95);
+            border: 1px solid var(--border-color);
+            color: #ffffff;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Bybit Activity Settings</h1>
+        <p>Керуйте ф'ючерсами та сповіщеннями про аномалії</p>
+    </header>
+
+    <!-- Картка додавання нової монети -->
+    <div class="card">
+        <div class="section-title">Додати монету (USDT Perpetual)</div>
+        <div class="add-form">
+            <div class="input-group">
+                <input type="text" id="symbolInput" placeholder="Наприклад: LAB, BTC, ETH..." autocomplete="off">
+                <div class="suggestions" id="suggestions"></div>
+            </div>
+            <button class="btn btn-primary" id="addBtn">➕ Додати</button>
+        </div>
+    </div>
+
+    <!-- Список налаштованих монет -->
+    <div class="card">
+        <div class="section-title">Ваші відстежувані монети</div>
+        <div id="loading" class="loading">⏳ Завантаження монет...</div>
+        <div id="emptyState" class="empty-state" style="display: none;">
+            Ви не відстежуєте жодної монети.<br>Додайте першу монету вище!
+        </div>
+        <div id="coinList" class="coin-list"></div>
+    </div>
+
+    <!-- Елемент спливаючого повідомлення -->
+    <div class="toast" id="toast">
+        <span id="toastIcon">✅</span> <span id="toastText">Налаштування збережено</span>
+    </div>
+
+    <script>
+        // Ініціалізація Telegram Web App SDK
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand(); // Розгорнути на весь екран
+
+        // Отримуємо chat_id користувача з даних Telegram
+        let chat_id = null;
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            chat_id = tg.initDataUnsafe.user.id;
+        } else {
+            // Для тестування у звичайному браузері
+            chat_id = 892993325; // Тимчасовий тестовий ID
+            console.warn("Дані користувача Telegram не знайдено, використовується тестовий chat_id");
+        }
+
+        // Застосування теми Telegram
+        document.body.classList.add('tg-theme');
+
+        // Список усіх активних символів Bybit
+        let allSymbols = [];
+        // Список поточних підписок користувача
+        let trackedCoins = [];
+
+        // DOM Елементи
+        const symbolInput = document.getElementById('symbolInput');
+        const suggestionsDiv = document.getElementById('suggestions');
+        const addBtn = document.getElementById('addBtn');
+        const coinListDiv = document.getElementById('coinList');
+        const loadingDiv = document.getElementById('loading');
+        const emptyStateDiv = document.getElementById('emptyState');
+        const toast = document.getElementById('toast');
+        const toastText = document.getElementById('toastText');
+        const toastIcon = document.getElementById('toastIcon');
+
+        // Показати тост-повідомлення
+        function showToast(text, isError = false) {
+            toastText.textContent = text;
+            toastIcon.textContent = isError ? "❌" : "✅";
+            toast.style.borderColor = isError ? "rgba(250,82,82,0.3)" : "rgba(18,184,134,0.3)";
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Завантаження всіх доступних символів Bybit
+        async function loadAllSymbols() {
+            try {
+                const response = await fetch('/api/symbols');
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    allSymbols = data.symbols;
+                }
+            } catch (e) {
+                console.error("Помилка завантаження символів: ", e);
+            }
+        }
+
+        // Завантаження підписок користувача
+        async function loadTrackedCoins() {
+            loadingDiv.style.display = 'block';
+            coinListDiv.innerHTML = '';
+            emptyStateDiv.style.display = 'none';
+            try {
+                const response = await fetch(`/api/coins?chat_id=${chat_id}`);
+                const data = await response.json();
+                loadingDiv.style.display = 'none';
+                
+                if (data.status === 'ok') {
+                    trackedCoins = data.coins;
+                    if (trackedCoins.length === 0) {
+                        emptyStateDiv.style.display = 'block';
+                    } else {
+                        renderCoinsList(trackedCoins);
+                    }
+                } else {
+                    showToast("Помилка завантаження даних з БД", true);
+                }
+            } catch (e) {
+                loadingDiv.style.display = 'none';
+                showToast("Помилка зв'язку із сервером", true);
+                console.error(e);
+            }
+        }
+
+        // Відображення списку монет
+        function renderCoinsList(coins) {
+            coinListDiv.innerHTML = '';
+            coins.forEach(coin => {
+                // coin: [symbol, volume_mult, twap_pct, price_report_interval]
+                const [symbol, volumeMult, twapPct, reportInterval] = coin;
+                
+                const card = document.createElement('div');
+                card.className = 'coin-card';
+                card.innerHTML = `
+                    <div class="coin-header">
+                        <div class="coin-title">
+                            ${symbol}
+                            <span class="tag">USDT Perp</span>
+                        </div>
+                        <button class="btn btn-danger" onclick="deleteCoin('${symbol}')">🗑️ Видалити</button>
+                    </div>
+
+                    <!-- Налаштування об'єму -->
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">🚨 Сплеск 1м об'єму (поріг):</span>
+                            <span class="setting-value" id="val_vol_${symbol}">${volumeMult}x</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" min="1.5" max="50" step="0.5" value="${volumeMult}" 
+                                oninput="updateSliderValue('${symbol}', 'vol', this.value)"
+                                onchange="saveCoinSettings('${symbol}')">
+                        </div>
+                    </div>
+
+                    <!-- Налаштування TWAP -->
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">⚠️ Відхилення від TWAP (4г):</span>
+                            <span class="setting-value" id="val_twap_${symbol}">${twapPct}%</span>
+                        </div>
+                        <div class="slider-container">
+                            <input type="range" min="1.0" max="20" step="0.5" value="${twapPct}" 
+                                oninput="updateSliderValue('${symbol}', 'twap', this.value)"
+                                onchange="saveCoinSettings('${symbol}')">
+                        </div>
+                    </div>
+
+                    <!-- Регулярний звіт -->
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <span class="setting-label">📋 Регулярні звіти про ціну:</span>
+                            <span class="setting-value" id="val_report_${symbol}">
+                                ${reportInterval > 0 ? `кожні ${reportInterval} хв` : 'Вимкнено'}
+                            </span>
+                        </div>
+                        <select onchange="updateReportInterval('${symbol}', this.value)">
+                            <option value="0" ${reportInterval === 0 ? 'selected' : ''}>Вимкнено</option>
+                            <option value="5" ${reportInterval === 5 ? 'selected' : ''}>Кожні 5 хвилин</option>
+                            <option value="10" ${reportInterval === 10 ? 'selected' : ''}>Кожні 10 хвилин</option>
+                            <option value="20" ${reportInterval === 20 ? 'selected' : ''}>Кожні 20 хвилин (Рекомендовано)</option>
+                            <option value="30" ${reportInterval === 30 ? 'selected' : ''}>Кожні 30 хвилин</option>
+                            <option value="60" ${reportInterval === 60 ? 'selected' : ''}>Кожну 1 годину</option>
+                        </select>
+                    </div>
+                `;
+                coinListDiv.appendChild(card);
+            });
+        }
+
+        // Оновлення текстового значення на слайдері в реальному часі
+        window.updateSliderValue = function(symbol, type, val) {
+            const el = document.getElementById(`val_${type}_${symbol}`);
+            if (el) {
+                el.textContent = type === 'vol' ? `${val}x` : `${val}%`;
+            }
+        }
+
+        // Додавання монети
+        async function addCoin(symbolInputVal) {
+            let symbol = symbolInputVal.trim().toUpperCase();
+            if (!symbol) return;
+
+            // Автодоповнення: додаємо USDT
+            if (!symbol.endsWith('USDT')) {
+                // Якщо є такий ф'ючерс з USDT, перейменовуємо
+                if (allSymbols.includes(`${symbol}USDT`)) {
+                    symbol = `${symbol}USDT`;
+                } else if (!allSymbols.includes(symbol)) {
+                    // Якщо взагалі не знайдено
+                    showToast(`Пару ${symbol} не знайдено на Bybit`, true);
+                    return;
+                }
+            } else if (!allSymbols.includes(symbol)) {
+                showToast(`Пару ${symbol} не знайдено на Bybit`, true);
+                return;
+            }
+
+            // Перевіряємо дублі
+            const isDuplicate = trackedCoins.some(coin => coin[0] === symbol);
+            if (isDuplicate) {
+                showToast("Монета вже додана у список", true);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/coins/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id, symbol })
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    showToast(`Додано ${symbol}`);
+                    symbolInput.value = '';
+                    suggestionsDiv.style.display = 'none';
+                    loadTrackedCoins();
+                } else {
+                    showToast(data.message || "Помилка додавання", true);
+                }
+            } catch (e) {
+                showToast("Помилка з'єднання із сервером", true);
+            }
+        }
+
+        // Видалення монети
+        window.deleteCoin = async function(symbol) {
+            if (!confirm(`Ви дійсно хочете видалити ${symbol} зі списку?`)) return;
+            try {
+                const response = await fetch('/api/coins/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id, symbol })
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    showToast(`Видалено ${symbol}`);
+                    loadTrackedCoins();
+                } else {
+                    showToast("Помилка видалення", true);
+                }
+            } catch (e) {
+                showToast("Помилка з'єднання", true);
+            }
+        }
+
+        // Збереження слайдерів (об'єм, TWAP)
+        window.saveCoinSettings = async function(symbol) {
+            const card = Array.from(coinListDiv.children).find(el => el.querySelector('.coin-title').textContent.includes(symbol));
+            if (!card) return;
+
+            const volumeMult = parseFloat(card.querySelector('input[min="1.5"]').value);
+            const twapPct = parseFloat(card.querySelector('input[min="1.0"]').value);
+            const selectVal = parseInt(card.querySelector('select').value);
+
+            try {
+                const response = await fetch('/api/coins/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id,
+                        symbol,
+                        volume_mult: volumeMult,
+                        twap_pct: twapPct,
+                        price_report_interval: selectVal
+                    })
+                });
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    showToast(`Оновлено налаштування для ${symbol}`);
+                } else {
+                    showToast("Не вдалося зберегти налаштування", true);
+                }
+            } catch (e) {
+                showToast("Помилка з'єднання при збереженні", true);
+            }
+        }
+
+        // Зміна інтервалу регулярного звіту через select
+        window.updateReportInterval = function(symbol, intervalVal) {
+            const valEl = document.getElementById(`val_report_${symbol}`);
+            const intVal = parseInt(intervalVal);
+            if (valEl) {
+                valEl.textContent = intVal > 0 ? `кожні ${intVal} хв` : 'Вимкнено';
+            }
+            saveCoinSettings(symbol);
+        }
+
+        // Обробка вводу в полі додавання монети (автозаповнення)
+        symbolInput.addEventListener('input', () => {
+            const query = symbolInput.value.trim().toUpperCase();
+            if (!query) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+
+            // Фільтрація символів Bybit
+            const matches = allSymbols
+                .filter(sym => sym.startsWith(query) || sym.startsWith(`${query}USDT`))
+                .slice(0, 5); // показуємо лише перші 5 збігів
+
+            if (matches.length > 0) {
+                suggestionsDiv.innerHTML = '';
+                matches.forEach(match => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item';
+                    item.textContent = match;
+                    item.addEventListener('click', () => {
+                        symbolInput.value = match;
+                        suggestionsDiv.style.display = 'none';
+                        addCoin(match);
+                    });
+                    suggestionsDiv.appendChild(item);
+                });
+                suggestionsDiv.style.display = 'block';
+            } else {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+
+        // Закриття автодоповнення при кліку в іншому місці
+        document.addEventListener('click', (e) => {
+            if (e.target !== symbolInput) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+
+        // Натискання кнопки Додати
+        addBtn.addEventListener('click', () => {
+            addCoin(symbolInput.value);
+        });
+
+        // Клавіша Enter в інпуті
+        symbolInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addCoin(symbolInput.value);
+            }
+        });
+
+        // Перший запуск
+        async function init() {
+            await loadAllSymbols();
+            await loadTrackedCoins();
+        }
+
+        init();
+    </script>
+</body>
+</html>
