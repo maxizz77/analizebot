@@ -2,32 +2,46 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bybit Activity Monitor Settings</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0b0e14;
-            --panel-bg: rgba(20, 26, 38, 0.6);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --text-color: #f1f3f5;
-            --text-muted: #868e96;
-            --primary: #4dabf7;
-            --primary-grad: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            --accent: #f59f00;
-            --danger: #fa5252;
-            --success: #12b886;
-            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* Telegram Theme Integration */
+            --tg-bg: var(--tg-theme-bg-color, #0f1219);
+            --tg-text: var(--tg-theme-text-color, #f1f3f5);
+            --tg-hint: var(--tg-theme-hint-color, #868e96);
+            --tg-link: var(--tg-theme-link-color, #4dabf7);
+            --tg-btn-bg: var(--tg-theme-button-color, #4dabf7);
+            --tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --tg-secondary-bg: var(--tg-theme-secondary-bg-color, #1a1e28);
+
+            /* Custom Tokens */
+            --bg-color: var(--tg-bg);
+            --panel-bg: rgba(255, 255, 255, 0.04);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            --text-color: var(--tg-text);
+            --text-muted: var(--tg-hint);
+            --primary: var(--tg-btn-bg);
+            --primary-grad: linear-gradient(135deg, var(--tg-btn-bg), #8b5cf6);
+            --danger: #ff4d4f;
+            --success: #20c997;
+            --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 8px;
+            --transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
 
-        /* Адаптація під кольори теми Telegram */
-        body.tg-theme {
-            --bg-color: var(--tg-theme-bg-color, #0b0e14);
-            --text-color: var(--tg-theme-text-color, #f1f3f5);
-            --primary: var(--tg-theme-button-color, #4dabf7);
-            --panel-bg: rgba(255, 255, 255, 0.03);
-            --border-color: rgba(255, 255, 255, 0.06);
+        /* Light theme overrides */
+        @media (prefers-color-scheme: light) {
+            body.tg-theme-light {
+                --panel-bg: rgba(0, 0, 0, 0.03);
+                --border-color: rgba(0, 0, 0, 0.06);
+                --border-hover: rgba(0, 0, 0, 0.15);
+            }
         }
 
         * {
@@ -35,67 +49,83 @@
             margin: 0;
             padding: 0;
             font-family: var(--font-family);
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            padding: 16px;
+            padding: 20px 16px;
             min-height: 100vh;
-            background-image: radial-gradient(circle at 10% 20%, rgba(90, 120, 255, 0.05) 0%, transparent 40%),
-                              radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 40%);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(77, 171, 247, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.06) 0%, transparent 40%);
             background-attachment: fixed;
+            overflow-x: hidden;
         }
 
         header {
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             text-align: center;
         }
 
         header h1 {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 700;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             background: linear-gradient(90deg, #60a5fa, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
         }
 
         header p {
-            font-size: 13px;
+            font-size: 14px;
             color: var(--text-muted);
+            font-weight: 400;
         }
 
         .card {
             background: var(--panel-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            transition: var(--transition);
         }
 
         .card:hover {
-            border-color: rgba(255, 255, 255, 0.12);
+            border-color: var(--border-hover);
         }
 
         .section-title {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             color: var(--text-muted);
-            margin-bottom: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 14px;
+            background: var(--primary);
+            border-radius: 4px;
         }
 
-        /* Форма додавання монет */
         .add-form {
             display: flex;
+            gap: 10px;
             position: relative;
-            gap: 8px;
         }
 
         .input-group {
@@ -105,103 +135,126 @@
 
         input[type="text"] {
             width: 100%;
-            padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.04);
+            height: 48px;
+            padding: 0 16px;
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: var(--radius-md);
             color: var(--text-color);
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
             outline: none;
-            transition: border-color 0.2s, background 0.2s;
+            transition: var(--transition);
         }
 
         input[type="text"]:focus {
             border-color: var(--primary);
-            background: rgba(255, 255, 255, 0.07);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.15);
         }
 
         .btn {
-            padding: 12px 20px;
+            height: 48px;
+            padding: 0 20px;
             border: none;
-            border-radius: 12px;
-            font-size: 14px;
+            border-radius: var(--radius-md);
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
+            transition: var(--transition);
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            color: #ffffff;
+            gap: 8px;
+            color: var(--tg-btn-text);
         }
 
         .btn-primary {
             background: var(--primary-grad);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 6px 16px rgba(77, 171, 247, 0.25);
         }
 
         .btn-primary:active {
-            transform: scale(0.97);
+            transform: translateY(2px);
+            box-shadow: 0 2px 8px rgba(77, 171, 247, 0.25);
         }
 
-        .btn-danger {
-            background: rgba(250, 82, 82, 0.15);
+        .btn-danger-icon {
+            background: rgba(255, 77, 79, 0.1);
             color: var(--danger);
-            border: 1px solid rgba(250, 82, 82, 0.2);
-            padding: 8px 12px;
-            font-size: 12px;
-            border-radius: 8px;
+            border: 1px solid rgba(255, 77, 79, 0.2);
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
         }
 
-        .btn-danger:active {
-            background: rgba(250, 82, 82, 0.25);
+        .btn-danger-icon:active {
+            background: rgba(255, 77, 79, 0.2);
+            transform: scale(0.92);
         }
 
-        /* Автозаповнення */
         .suggestions {
             position: absolute;
-            top: calc(100% + 4px);
+            top: calc(100% + 8px);
             left: 0;
             right: 0;
-            background: #141a26;
+            background: var(--tg-secondary-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            max-height: 200px;
+            border-radius: var(--radius-md);
+            max-height: 220px;
             overflow-y: auto;
             z-index: 100;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
             display: none;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         .suggestion-item {
-            padding: 10px 16px;
+            padding: 14px 18px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 500;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-            transition: background 0.15s;
+            border-bottom: 1px solid var(--border-color);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .suggestion-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--primary);
+        .suggestion-item:last-child {
+            border-bottom: none;
         }
 
-        /* Список відстежуваних монет */
+        .suggestion-item:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
         .coin-list {
-            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .coin-card {
             border: 1px solid var(--border-color);
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.01);
-            padding: 16px;
-            margin-bottom: 14px;
+            border-radius: var(--radius-md);
+            background: rgba(0, 0, 0, 0.15);
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 24px;
+            transition: var(--transition);
+        }
+
+        .coin-card:hover {
+            background: rgba(0, 0, 0, 0.25);
+            border-color: var(--border-hover);
         }
 
         .coin-header {
@@ -211,132 +264,359 @@
         }
 
         .coin-title {
-            font-size: 16px;
+            font-size: 20px;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 8px;
-            color: #ffffff;
+            gap: 10px;
+            color: var(--text-color);
         }
 
         .coin-title span.tag {
             font-size: 10px;
+            font-weight: 700;
             background: rgba(77, 171, 247, 0.15);
             color: var(--primary);
-            padding: 2px 6px;
+            padding: 4px 8px;
             border-radius: 6px;
-            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        /* Повзунки та селектори */
         .setting-row {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 12px;
         }
 
         .setting-info {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
+            align-items: center;
+            font-size: 13px;
             font-weight: 500;
         }
 
         .setting-label {
             color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .setting-value {
             color: var(--primary);
-            font-weight: 600;
+            font-weight: 700;
+            background: rgba(77, 171, 247, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 13px;
         }
 
-        .slider-container {
+        .slider-wrapper {
+            position: relative;
+            height: 24px;
             display: flex;
             align-items: center;
-            gap: 12px;
+        }
+
+        .slider-track {
+            position: absolute;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            pointer-events: none;
+        }
+
+        .slider-fill {
+            position: absolute;
+            height: 6px;
+            background: var(--primary-grad);
+            border-radius: 3px;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(77, 171, 247, 0.4);
         }
 
         input[type="range"] {
-            flex-grow: 1;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            outline: none;
+            width: 100%;
+            height: 24px;
             -webkit-appearance: none;
+            background: transparent;
+            outline: none;
+            position: relative;
+            z-index: 2;
+            margin: 0;
+            cursor: pointer;
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            background: var(--primary);
-            cursor: pointer;
-            box-shadow: 0 0 8px rgba(77, 171, 247, 0.5);
-            transition: transform 0.1s;
+            background: #ffffff;
+            cursor: grab;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 4px rgba(77, 171, 247, 0.2);
+            transition: transform 0.15s, box-shadow 0.15s;
         }
 
         input[type="range"]::-webkit-slider-thumb:active {
-            transform: scale(1.2);
+            cursor: grabbing;
+            transform: scale(1.15);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), 0 0 0 6px rgba(77, 171, 247, 0.3);
         }
 
-        select {
+        /* Custom Select */
+        .custom-select {
+            position: relative;
             width: 100%;
-            padding: 10px 14px;
+        }
+
+        .select-trigger {
+            width: 100%;
+            height: 44px;
+            padding: 0 16px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             color: var(--text-color);
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .select-trigger:active {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .select-trigger.open {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .select-trigger svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--text-muted);
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .select-trigger.open svg {
+            transform: rotate(180deg);
+            fill: var(--primary);
+        }
+
+        .select-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            width: 100%;
+            background: var(--tg-secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            z-index: 50;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.98);
+            transform-origin: top;
+            transition: opacity 0.25s, transform 0.25s, visibility 0.25s;
+        }
+
+        .select-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .select-option {
+            padding: 12px 16px;
             font-size: 13px;
             font-weight: 500;
-            outline: none;
+            color: var(--text-color);
             cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .select-option:last-child {
+            border-bottom: none;
         }
 
-        select:focus {
-            border-color: var(--primary);
+        .select-option:active {
+            background: rgba(255, 255, 255, 0.05);
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 30px 10px;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px 0;
+        .select-option.selected {
             color: var(--primary);
+            background: rgba(77, 171, 247, 0.05);
+        }
+
+        /* Modal Custom Confirm */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-card {
+            background: var(--tg-secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 320px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.show .modal-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(255, 77, 79, 0.1);
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .modal-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: currentColor;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .modal-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-modal {
+            flex: 1;
+            height: 44px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-modal-cancel {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-color);
+        }
+
+        .btn-modal-cancel:active {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .btn-modal-confirm {
+            background: var(--danger);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+        }
+
+        .btn-modal-confirm:active {
+            transform: translateY(2px);
+        }
+
+        .empty-state, .loading {
+            text-align: center;
+            padding: 40px 10px;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
             font-weight: 500;
         }
-
-        .badge-alert {
-            background: rgba(250, 82, 82, 0.1) !important;
-            color: var(--danger) !important;
+        
+        .empty-state .icon {
+            font-size: 48px;
+            opacity: 0.5;
+            margin-bottom: 8px;
         }
 
-        /* Сповіщення (Toast) */
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(77, 171, 247, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         .toast {
             position: fixed;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: rgba(20, 26, 38, 0.95);
+            background: var(--tg-secondary-bg);
             border: 1px solid var(--border-color);
-            color: #ffffff;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-size: 13px;
+            color: var(--text-color);
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 14px;
             font-weight: 600;
             z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             pointer-events: none;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .toast.show {
@@ -346,62 +626,76 @@
 </head>
 <body>
     <header>
-        <h1>Bybit Activity Settings</h1>
-        <p>Керуйте ф'ючерсами та сповіщеннями про аномалії</p>
+        <h1>Bybit Settings</h1>
+        <p>Кастомізуйте ліміти сповіщень та звіти</p>
     </header>
 
-    <!-- Картка додавання нової монети -->
     <div class="card">
-        <div class="section-title">Додати монету (USDT Perpetual)</div>
+        <div class="section-title">Додати ф'ючерс</div>
         <div class="add-form">
             <div class="input-group">
-                <input type="text" id="symbolInput" placeholder="Наприклад: LAB, BTC, ETH..." autocomplete="off">
+                <input type="text" id="symbolInput" placeholder="Наприклад: BTC, ETH..." autocomplete="off">
                 <div class="suggestions" id="suggestions"></div>
             </div>
-            <button class="btn btn-primary" id="addBtn">➕ Додати</button>
+            <button class="btn btn-primary" id="addBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Додати
+            </button>
         </div>
     </div>
 
-    <!-- Список налаштованих монет -->
     <div class="card">
-        <div class="section-title">Ваші відстежувані монети</div>
-        <div id="loading" class="loading">⏳ Завантаження монет...</div>
+        <div class="section-title">Ваші монети</div>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            Завантаження...
+        </div>
         <div id="emptyState" class="empty-state" style="display: none;">
+            <div class="icon">🔍</div>
             Ви не відстежуєте жодної монети.<br>Додайте першу монету вище!
         </div>
         <div id="coinList" class="coin-list"></div>
     </div>
 
-    <!-- Елемент спливаючого повідомлення -->
     <div class="toast" id="toast">
-        <span id="toastIcon">✅</span> <span id="toastText">Налаштування збережено</span>
+        <span id="toastIcon">✅</span> <span id="toastText">Збережено</span>
+    </div>
+
+    <!-- Модальне вікно видалення -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-card">
+            <div class="modal-icon">
+                <svg viewBox="0 0 24 24"><path d="M15 4V3H9v1H4v2h1v13c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6h1V4h-5zm2 15H7V6h10v13zM9 8h2v9H9zm4 0h2v9h-2z"/></svg>
+            </div>
+            <h3 class="modal-title">Видалити монету?</h3>
+            <p class="modal-desc">Ви дійсно хочете перестати відстежувати <strong id="deleteSymbolName"></strong>?</p>
+            <div class="modal-actions">
+                <button class="btn-modal btn-modal-cancel" id="btnCancelDelete">Скасувати</button>
+                <button class="btn-modal btn-modal-confirm" id="btnConfirmDelete">Видалити</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Ініціалізація Telegram Web App SDK
         const tg = window.Telegram.WebApp;
         tg.ready();
-        tg.expand(); // Розгорнути на весь екран
-
-        // Отримуємо chat_id користувача з даних Telegram
+        tg.expand(); 
+        
         let chat_id = null;
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             chat_id = tg.initDataUnsafe.user.id;
         } else {
-            // Для тестування у звичайному браузері
-            chat_id = 892993325; // Тимчасовий тестовий ID
-            console.warn("Дані користувача Telegram не знайдено, використовується тестовий chat_id");
+            chat_id = 892993325; 
         }
 
-        // Застосування теми Telegram
         document.body.classList.add('tg-theme');
+        if (tg.colorScheme === 'light') {
+            document.body.classList.add('tg-theme-light');
+        }
 
-        // Список усіх активних символів Bybit
         let allSymbols = [];
-        // Список поточних підписок користувача
         let trackedCoins = [];
 
-        // DOM Елементи
         const symbolInput = document.getElementById('symbolInput');
         const suggestionsDiv = document.getElementById('suggestions');
         const addBtn = document.getElementById('addBtn');
@@ -412,33 +706,58 @@
         const toastText = document.getElementById('toastText');
         const toastIcon = document.getElementById('toastIcon');
 
-        // Показати тост-повідомлення
+        // Modal Variables
+        const deleteModal = document.getElementById('deleteModal');
+        const btnCancelDelete = document.getElementById('btnCancelDelete');
+        const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+        const deleteSymbolName = document.getElementById('deleteSymbolName');
+        let coinToDelete = null;
+
         function showToast(text, isError = false) {
             toastText.textContent = text;
             toastIcon.textContent = isError ? "❌" : "✅";
-            toast.style.borderColor = isError ? "rgba(250,82,82,0.3)" : "rgba(18,184,134,0.3)";
+            toast.style.borderColor = isError ? "rgba(255,77,79,0.3)" : "rgba(32,201,151,0.3)";
             toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // Завантаження всіх доступних символів Bybit
+        // Modal logic
+        function openDeleteModal(symbol) {
+            coinToDelete = symbol;
+            deleteSymbolName.textContent = symbol;
+            deleteModal.classList.add('show');
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function closeDeleteModal() {
+            coinToDelete = null;
+            deleteModal.classList.remove('show');
+        }
+
+        btnCancelDelete.onclick = closeDeleteModal;
+        btnConfirmDelete.onclick = async () => {
+            if (coinToDelete) {
+                await executeDelete(coinToDelete);
+                closeDeleteModal();
+            }
+        };
+
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) closeDeleteModal();
+        });
+
         async function loadAllSymbols() {
             try {
                 const response = await fetch('/api/symbols');
                 const data = await response.json();
-                if (data.status === 'ok') {
-                    allSymbols = data.symbols;
-                }
+                if (data.status === 'ok') allSymbols = data.symbols;
             } catch (e) {
-                console.error("Помилка завантаження символів: ", e);
+                console.error(e);
             }
         }
 
-        // Завантаження підписок користувача
         async function loadTrackedCoins() {
-            loadingDiv.style.display = 'block';
+            loadingDiv.style.display = 'flex';
             coinListDiv.innerHTML = '';
             emptyStateDiv.style.display = 'none';
             try {
@@ -449,118 +768,190 @@
                 if (data.status === 'ok') {
                     trackedCoins = data.coins;
                     if (trackedCoins.length === 0) {
-                        emptyStateDiv.style.display = 'block';
+                        emptyStateDiv.style.display = 'flex';
                     } else {
                         renderCoinsList(trackedCoins);
                     }
                 } else {
-                    showToast("Помилка завантаження даних з БД", true);
+                    showToast("Помилка завантаження", true);
                 }
             } catch (e) {
                 loadingDiv.style.display = 'none';
-                showToast("Помилка зв'язку із сервером", true);
-                console.error(e);
+                showToast("Помилка сервера", true);
             }
         }
 
-        // Відображення списку монет
+        function updateSliderFill(inputEl) {
+            const min = parseFloat(inputEl.min) || 0;
+            const max = parseFloat(inputEl.max) || 100;
+            const val = parseFloat(inputEl.value);
+            const percentage = ((val - min) / (max - min)) * 100;
+            const fillEl = inputEl.parentNode.querySelector('.slider-fill');
+            if (fillEl) fillEl.style.width = percentage + '%';
+        }
+
         function renderCoinsList(coins) {
             coinListDiv.innerHTML = '';
             coins.forEach(coin => {
-                // coin: [symbol, volume_mult, twap_pct, price_report_interval]
                 const [symbol, volumeMult, twapPct, reportInterval] = coin;
                 
+                // Interval Text Mapping
+                const intervals = {
+                    0: "Вимкнено",
+                    5: "Кожні 5 хвилин",
+                    10: "Кожні 10 хвилин",
+                    20: "Кожні 20 хвилин",
+                    30: "Кожні 30 хвилин",
+                    60: "Кожну 1 годину"
+                };
+                const currentIntervalText = intervals[reportInterval] || "Вимкнено";
+
                 const card = document.createElement('div');
                 card.className = 'coin-card';
                 card.innerHTML = `
                     <div class="coin-header">
                         <div class="coin-title">
-                            ${symbol}
-                            <span class="tag">USDT Perp</span>
+                            ${symbol} <span class="tag">USDT</span>
                         </div>
-                        <button class="btn btn-danger" onclick="deleteCoin('${symbol}')">🗑️ Видалити</button>
+                        <div class="btn-danger-icon" onclick="openDeleteModal('${symbol}')">
+                            <svg viewBox="0 0 24 24"><path d="M15 4V3H9v1H4v2h1v13c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6h1V4h-5zm2 15H7V6h10v13zM9 8h2v9H9zm4 0h2v9h-2z"/></svg>
+                        </div>
                     </div>
 
-                    <!-- Налаштування об'єму -->
                     <div class="setting-row">
                         <div class="setting-info">
-                            <span class="setting-label">🚨 Сплеск 1м об'єму (поріг):</span>
+                            <span class="setting-label">🔥 Об'єм (1м поріг)</span>
                             <span class="setting-value" id="val_vol_${symbol}">${volumeMult}x</span>
                         </div>
-                        <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <div class="slider-track"></div>
+                            <div class="slider-fill"></div>
                             <input type="range" min="1.5" max="50" step="0.5" value="${volumeMult}" 
-                                oninput="updateSliderValue('${symbol}', 'vol', this.value)"
+                                oninput="handleSliderInput(this, '${symbol}', 'vol')"
                                 onchange="saveCoinSettings('${symbol}')">
                         </div>
                     </div>
 
-                    <!-- Налаштування TWAP -->
                     <div class="setting-row">
                         <div class="setting-info">
-                            <span class="setting-label">⚠️ Відхилення від TWAP (4г):</span>
+                            <span class="setting-label">📈 Відхилення TWAP (4г)</span>
                             <span class="setting-value" id="val_twap_${symbol}">${twapPct}%</span>
                         </div>
-                        <div class="slider-container">
+                        <div class="slider-wrapper">
+                            <div class="slider-track"></div>
+                            <div class="slider-fill"></div>
                             <input type="range" min="1.0" max="20" step="0.5" value="${twapPct}" 
-                                oninput="updateSliderValue('${symbol}', 'twap', this.value)"
+                                oninput="handleSliderInput(this, '${symbol}', 'twap')"
                                 onchange="saveCoinSettings('${symbol}')">
                         </div>
                     </div>
 
-                    <!-- Регулярний звіт -->
                     <div class="setting-row">
                         <div class="setting-info">
-                            <span class="setting-label">📋 Регулярні звіти про ціну:</span>
-                            <span class="setting-value" id="val_report_${symbol}">
-                                ${reportInterval > 0 ? `кожні ${reportInterval} хв` : 'Вимкнено'}
-                            </span>
+                            <span class="setting-label">⏱ Регулярні звіти</span>
+                            <span class="setting-value" id="val_report_${symbol}">${reportInterval > 0 ? reportInterval+' хв' : 'Вимк.'}</span>
                         </div>
-                        <select onchange="updateReportInterval('${symbol}', this.value)">
-                            <option value="0" ${reportInterval === 0 ? 'selected' : ''}>Вимкнено</option>
-                            <option value="5" ${reportInterval === 5 ? 'selected' : ''}>Кожні 5 хвилин</option>
-                            <option value="10" ${reportInterval === 10 ? 'selected' : ''}>Кожні 10 хвилин</option>
-                            <option value="20" ${reportInterval === 20 ? 'selected' : ''}>Кожні 20 хвилин (Рекомендовано)</option>
-                            <option value="30" ${reportInterval === 30 ? 'selected' : ''}>Кожні 30 хвилин</option>
-                            <option value="60" ${reportInterval === 60 ? 'selected' : ''}>Кожну 1 годину</option>
-                        </select>
+                        <div class="custom-select" id="select_${symbol}" data-value="${reportInterval}">
+                            <div class="select-trigger" onclick="toggleSelect('${symbol}')">
+                                <span class="select-text">${currentIntervalText}</span>
+                                <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                            </div>
+                            <div class="select-dropdown">
+                                <div class="select-option ${reportInterval == 0 ? 'selected' : ''}" onclick="selectOption('${symbol}', 0, 'Вимкнено')">Вимкнено</div>
+                                <div class="select-option ${reportInterval == 5 ? 'selected' : ''}" onclick="selectOption('${symbol}', 5, 'Кожні 5 хвилин')">Кожні 5 хвилин</div>
+                                <div class="select-option ${reportInterval == 10 ? 'selected' : ''}" onclick="selectOption('${symbol}', 10, 'Кожні 10 хвилин')">Кожні 10 хвилин</div>
+                                <div class="select-option ${reportInterval == 20 ? 'selected' : ''}" onclick="selectOption('${symbol}', 20, 'Кожні 20 хвилин')">Кожні 20 хвилин</div>
+                                <div class="select-option ${reportInterval == 30 ? 'selected' : ''}" onclick="selectOption('${symbol}', 30, 'Кожні 30 хвилин')">Кожні 30 хвилин</div>
+                                <div class="select-option ${reportInterval == 60 ? 'selected' : ''}" onclick="selectOption('${symbol}', 60, 'Кожну 1 годину')">Кожну 1 годину</div>
+                            </div>
+                        </div>
                     </div>
                 `;
                 coinListDiv.appendChild(card);
+                
+                // Init slider fills
+                const sliders = card.querySelectorAll('input[type="range"]');
+                sliders.forEach(slider => updateSliderFill(slider));
             });
         }
 
-        // Оновлення текстового значення на слайдері в реальному часі
-        window.updateSliderValue = function(symbol, type, val) {
-            const el = document.getElementById(`val_${type}_${symbol}`);
-            if (el) {
-                el.textContent = type === 'vol' ? `${val}x` : `${val}%`;
+        window.handleSliderInput = function(el, symbol, type) {
+            updateSliderFill(el);
+            const valEl = document.getElementById(`val_${type}_${symbol}`);
+            if (valEl) {
+                valEl.textContent = type === 'vol' ? `${el.value}x` : `${el.value}%`;
             }
         }
 
-        // Додавання монети
+        // Custom Select Logic
+        window.toggleSelect = function(symbol) {
+            const selectEl = document.getElementById(`select_${symbol}`);
+            const trigger = selectEl.querySelector('.select-trigger');
+            const dropdown = selectEl.querySelector('.select-dropdown');
+            
+            // Close other open selects
+            document.querySelectorAll('.custom-select').forEach(el => {
+                if (el.id !== `select_${symbol}`) {
+                    el.querySelector('.select-trigger').classList.remove('open');
+                    el.querySelector('.select-dropdown').classList.remove('show');
+                }
+            });
+
+            trigger.classList.toggle('open');
+            dropdown.classList.toggle('show');
+            if(trigger.classList.contains('open')) tg.HapticFeedback.selectionChanged();
+        }
+
+        window.selectOption = function(symbol, value, text) {
+            const selectEl = document.getElementById(`select_${symbol}`);
+            selectEl.dataset.value = value;
+            
+            const trigger = selectEl.querySelector('.select-trigger');
+            trigger.querySelector('.select-text').textContent = text;
+            trigger.classList.remove('open');
+            
+            const dropdown = selectEl.querySelector('.select-dropdown');
+            dropdown.classList.remove('show');
+            
+            const options = dropdown.querySelectorAll('.select-option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            
+            const valEl = document.getElementById(`val_report_${symbol}`);
+            if (valEl) {
+                valEl.textContent = value > 0 ? `${value} хв` : 'Вимк.';
+            }
+
+            tg.HapticFeedback.impactOccurred('light');
+            saveCoinSettings(symbol);
+        }
+
+        // Close select when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.custom-select')) {
+                document.querySelectorAll('.select-trigger').forEach(el => el.classList.remove('open'));
+                document.querySelectorAll('.select-dropdown').forEach(el => el.classList.remove('show'));
+            }
+        });
+
         async function addCoin(symbolInputVal) {
             let symbol = symbolInputVal.trim().toUpperCase();
             if (!symbol) return;
 
-            // Автодоповнення: додаємо USDT
             if (!symbol.endsWith('USDT')) {
-                // Якщо є такий ф'ючерс з USDT, перейменовуємо
                 if (allSymbols.includes(`${symbol}USDT`)) {
                     symbol = `${symbol}USDT`;
                 } else if (!allSymbols.includes(symbol)) {
-                    // Якщо взагалі не знайдено
                     showToast(`Пару ${symbol} не знайдено на Bybit`, true);
                     return;
                 }
             } else if (!allSymbols.includes(symbol)) {
-                showToast(`Пару ${symbol} не знайдено на Bybit`, true);
+                showToast(`Пару ${symbol} не знайдено`, true);
                 return;
             }
 
-            // Перевіряємо дублі
-            const isDuplicate = trackedCoins.some(coin => coin[0] === symbol);
-            if (isDuplicate) {
-                showToast("Монета вже додана у список", true);
+            if (trackedCoins.some(coin => coin[0] === symbol)) {
+                showToast("Монета вже додана", true);
                 return;
             }
 
@@ -573,20 +964,19 @@
                 const data = await response.json();
                 if (data.status === 'ok') {
                     showToast(`Додано ${symbol}`);
+                    tg.HapticFeedback.notificationOccurred('success');
                     symbolInput.value = '';
                     suggestionsDiv.style.display = 'none';
                     loadTrackedCoins();
                 } else {
-                    showToast(data.message || "Помилка додавання", true);
+                    showToast(data.message || "Помилка", true);
                 }
             } catch (e) {
-                showToast("Помилка з'єднання із сервером", true);
+                showToast("Помилка з'єднання", true);
             }
         }
 
-        // Видалення монети
-        window.deleteCoin = async function(symbol) {
-            if (!confirm(`Ви дійсно хочете видалити ${symbol} зі списку?`)) return;
+        async function executeDelete(symbol) {
             try {
                 const response = await fetch('/api/coins/delete', {
                     method: 'POST',
@@ -596,6 +986,7 @@
                 const data = await response.json();
                 if (data.status === 'ok') {
                     showToast(`Видалено ${symbol}`);
+                    tg.HapticFeedback.notificationOccurred('success');
                     loadTrackedCoins();
                 } else {
                     showToast("Помилка видалення", true);
@@ -605,14 +996,13 @@
             }
         }
 
-        // Збереження слайдерів (об'єм, TWAP)
         window.saveCoinSettings = async function(symbol) {
             const card = Array.from(coinListDiv.children).find(el => el.querySelector('.coin-title').textContent.includes(symbol));
             if (!card) return;
 
             const volumeMult = parseFloat(card.querySelector('input[min="1.5"]').value);
             const twapPct = parseFloat(card.querySelector('input[min="1.0"]').value);
-            const selectVal = parseInt(card.querySelector('select').value);
+            const selectVal = parseInt(card.querySelector('.custom-select').dataset.value);
 
             try {
                 const response = await fetch('/api/coins/update', {
@@ -628,26 +1018,15 @@
                 });
                 const data = await response.json();
                 if (data.status === 'ok') {
-                    showToast(`Оновлено налаштування для ${symbol}`);
+                    showToast(`Збережено`);
                 } else {
-                    showToast("Не вдалося зберегти налаштування", true);
+                    showToast("Помилка збереження", true);
                 }
             } catch (e) {
-                showToast("Помилка з'єднання при збереженні", true);
+                showToast("Помилка з'єднання", true);
             }
         }
 
-        // Зміна інтервалу регулярного звіту через select
-        window.updateReportInterval = function(symbol, intervalVal) {
-            const valEl = document.getElementById(`val_report_${symbol}`);
-            const intVal = parseInt(intervalVal);
-            if (valEl) {
-                valEl.textContent = intVal > 0 ? `кожні ${intVal} хв` : 'Вимкнено';
-            }
-            saveCoinSettings(symbol);
-        }
-
-        // Обробка вводу в полі додавання монети (автозаповнення)
         symbolInput.addEventListener('input', () => {
             const query = symbolInput.value.trim().toUpperCase();
             if (!query) {
@@ -655,17 +1034,16 @@
                 return;
             }
 
-            // Фільтрація символів Bybit
             const matches = allSymbols
                 .filter(sym => sym.startsWith(query) || sym.startsWith(`${query}USDT`))
-                .slice(0, 5); // показуємо лише перші 5 збігів
+                .slice(0, 5); 
 
             if (matches.length > 0) {
                 suggestionsDiv.innerHTML = '';
                 matches.forEach(match => {
                     const item = document.createElement('div');
                     item.className = 'suggestion-item';
-                    item.textContent = match;
+                    item.innerHTML = `<span>${match}</span><span style="color:var(--primary);font-size:12px;">USDT</span>`;
                     item.addEventListener('click', () => {
                         symbolInput.value = match;
                         suggestionsDiv.style.display = 'none';
@@ -679,26 +1057,17 @@
             }
         });
 
-        // Закриття автодоповнення при кліку в іншому місці
         document.addEventListener('click', (e) => {
-            if (e.target !== symbolInput) {
+            if (e.target !== symbolInput && !symbolInput.contains(e.target)) {
                 suggestionsDiv.style.display = 'none';
             }
         });
 
-        // Натискання кнопки Додати
-        addBtn.addEventListener('click', () => {
-            addCoin(symbolInput.value);
-        });
-
-        // Клавіша Enter в інпуті
+        addBtn.addEventListener('click', () => addCoin(symbolInput.value));
         symbolInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addCoin(symbolInput.value);
-            }
+            if (e.key === 'Enter') addCoin(symbolInput.value);
         });
 
-        // Перший запуск
         async function init() {
             await loadAllSymbols();
             await loadTrackedCoins();
