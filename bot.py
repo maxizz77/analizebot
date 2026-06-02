@@ -136,6 +136,9 @@ async def add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_valid = price is not None
     else:
         is_valid = symbol in active_symbols
+        if not is_valid and f"{symbol}USDT" in active_symbols:
+            symbol = f"{symbol}USDT"
+            is_valid = True
         
     if not is_valid:
         await status_msg.edit_text(
