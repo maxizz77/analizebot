@@ -5,6 +5,11 @@ from dotenv import load_dotenv
 load_dotenv()
 DB_PATH = os.getenv("DB_PATH", "bot_database.db")
 
+# Створюємо батьківську директорію для БД, якщо вона не існує
+db_dir = os.path.dirname(os.path.abspath(DB_PATH))
+if db_dir:
+    os.makedirs(db_dir, exist_ok=True)
+
 def get_connection():
     return sqlite3.connect(DB_PATH)
 
