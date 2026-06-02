@@ -6,6 +6,12 @@ logger = logging.getLogger(__name__)
 import os
 
 BASE_URL = os.getenv("BYBIT_BASE_URL", "https://api.bytick.com").strip()
+PROXY = os.getenv("BYBIT_PROXY", "").strip()
+
+def get_proxies():
+    if PROXY:
+        return {"http": PROXY, "https": PROXY}
+    return None
 
 def get_active_symbols(category="linear"):
     """
@@ -16,7 +22,7 @@ def get_active_symbols(category="linear"):
     params = {"category": category}
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=10)
+        response = requests.get(url, params=params, headers=headers, proxies=get_proxies(), timeout=10)
         if response.status_code != 200:
             logger.warning(f"Не вдалося отримати інструменти Bybit: HTTP {response.status_code}")
             return set()
@@ -49,7 +55,7 @@ def get_current_price(symbol, category="linear"):
     params = {"category": category, "symbol": symbol}
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=10)
+        response = requests.get(url, params=params, headers=headers, proxies=get_proxies(), timeout=10)
         if response.status_code != 200:
             logger.warning(f"Не вдалося отримати ціну {symbol} з Bybit: HTTP {response.status_code}")
             return None
@@ -90,7 +96,7 @@ def calculate_twap_and_volume(symbol, category="linear", interval="1", limit=240
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
     
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=10)
+        response = requests.get(url, params=params, headers=headers, proxies=get_proxies(), timeout=10)
         if response.status_code != 200:
             logger.warning(f"Не вдалося отримати свічки для {symbol} з Bybit: HTTP {response.status_code}")
             return None

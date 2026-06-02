@@ -390,7 +390,7 @@ async def debug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         params = {"category": "linear", "limit": 1}
         start_time = time.time()
         try:
-            r = requests.get(url, params=params, headers=headers, timeout=5)
+            r = requests.get(url, params=params, headers=headers, proxies=bybit.get_proxies(), timeout=5)
             elapsed = time.time() - start_time
             if r.status_code == 200:
                 try:
@@ -549,7 +549,7 @@ async def api_debug(request):
         params = {"category": "linear", "limit": 1}
         start_time = time.time()
         try:
-            r = requests.get(url, params=params, headers=headers, timeout=5)
+            r = requests.get(url, params=params, headers=headers, proxies=bybit.get_proxies(), timeout=5)
             elapsed = time.time() - start_time
             results[domain] = {
                 "status_code": r.status_code,
