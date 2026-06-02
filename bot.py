@@ -344,6 +344,53 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode="Markdown"
         )
 
+async def debug_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обробник команди /debug для діагностики підключення до Bybit"""
+    import requests
+    import time
+    
+    chat_id = update.effective_chat.id
+    status_msg = await update.message.reply_text("⏳ Запускаю діагностику підключення до Bybit API...")
+    
+    domains = [
+        "https://api.bybit.com",
+        "https://api.bytick.com",
+        "https://api.bytick.nl",
+        "https://api.bybit-tr.com",
+        "https://api.bybit.kz"
+    ]
+    
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+    response_text = "📊 **Діагностика підключення до Bybit API:**\n\n"
+    
+    for domain in domains:
+        url = f"{domain}/v5/market/instruments-info"
+        params = {"category": "linear", "limit": 1}
+        start_time = time.time()
+        try:
+            r = requests.get(url, params=params, headers=headers, timeout=5)
+            elapsed = time.time() - start_time
+            if r.status_code == 200:
+                try:
+                    data = r.json()
+                    ret_code = data.get("retCode")
+                    ret_msg = data.get("retMsg")
+                    if ret_code == 0:
+                        response_text += f"✅ `{domain}`: OK ({elapsed:.2f}s)\n"
+                    else:
+                        response_text += f"⚠️ `{domain}`: Код {ret_code} ({ret_msg}) ({elapsed:.2f}s)\n"
+                except Exception:
+                    response_text += f"⚠️ `{domain}`: Некоректний JSON (HTTP {r.status_code}) ({elapsed:.2f}s)\n"
+            else:
+                response_text += f"❌ `{domain}`: HTTP {r.status_code} ({elapsed:.2f}s)\n"
+        except Exception as e:
+            elapsed = time.time() - start_time
+            err_str = str(e)[:50]
+            response_text += f"❌ `{domain}`: Помилка: `{err_str}` ({elapsed:.2f}s)\n"
+            
+    response_text += f"\n🔧 Поточний робочий `BASE_URL`: `{bybit.BASE_URL}`"
+    await status_msg.edit_text(response_text, parse_mode="Markdown")
+
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник натискання інлайн кнопок"""
     query = update.callback_query
@@ -457,6 +504,46 @@ async def handle_index(request):
     """Повертає головну сторінку веб-додатка"""
     return web.FileResponse('./static/index.html')
 
+async def api_debug(request):
+    """Діагностичний ендпоінт для перевірки доступу до Bybit API"""
+    import requests
+    import time
+    
+    domains = [
+        "https://api.bybit.com",
+        "https://api.bytick.com",
+        "https://api.bytick.nl",
+        "https://api.bybit-tr.com",
+        "https://api.bybit.kz"
+    ]
+    
+    results = {}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+    
+    for domain in domains:
+        url = f"{domain}/v5/market/instruments-info"
+        params = {"category": "linear", "limit": 1}
+        start_time = time.time()
+        try:
+            r = requests.get(url, params=params, headers=headers, timeout=5)
+            elapsed = time.time() - start_time
+            results[domain] = {
+                "status_code": r.status_code,
+                "elapsed_seconds": round(elapsed, 3),
+                "is_ok": r.status_code == 200 and r.json().get("retCode") == 0,
+                "retCode": r.json().get("retCode") if r.status_code == 200 else None,
+                "retMsg": r.json().get("retMsg") if r.status_code == 200 else None
+            }
+        except Exception as e:
+            elapsed = time.time() - start_time
+            results[domain] = {
+                "error": str(e),
+                "elapsed_seconds": round(elapsed, 3),
+                "is_ok": False
+            }
+            
+    return web.json_response({"status": "ok", "debug_results": results})
+
 async def api_symbols(request):
     """Повертає список активних пар Bybit ф'ючерсів"""
     active = bybit.get_active_symbols("linear")
@@ -531,6 +618,7 @@ async def start_web_server():
     app = web.Application()
     # Роутинг статики та API
     app.router.add_get('/', handle_index)
+    app.router.add_get('/api/debug', api_debug)
     app.router.add_get('/api/symbols', api_symbols)
     app.router.add_get('/api/coins', api_get_coins)
     app.router.add_post('/api/coins/add', api_add_coin)
@@ -578,6 +666,7 @@ def main():
     app.add_handler(CommandHandler("volume", volume_command))
     app.add_handler(CommandHandler("settings", settings_command))
     app.add_handler(CommandHandler("report", report_command))
+    app.add_handler(CommandHandler("debug", debug_command))
     
     # Обробник callback-запитів від інлайн кнопок
     app.add_handler(CallbackQueryHandler(handle_callback))
