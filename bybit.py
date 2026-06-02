@@ -3,7 +3,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-BASE_URL = "https://api.bytick.com"
+import os
+
+BASE_URL = os.getenv("BYBIT_BASE_URL", "https://api.bytick.com").strip()
 
 def get_active_symbols(category="linear"):
     """
