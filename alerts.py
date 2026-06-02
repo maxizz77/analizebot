@@ -38,7 +38,8 @@ async def check_alerts(bot: Bot):
         }
         
         try:
-            response = requests.get(url, params=params, timeout=10)
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+            response = requests.get(url, params=params, headers=headers, timeout=10)
             if response.status_code != 200:
                 logger.warning(f"Не вдалося отримати дані з Bybit для {symbol}: HTTP {response.status_code}")
                 continue
@@ -156,7 +157,8 @@ async def check_reports(bot: Bot):
                 "limit": interval_minutes + 2
             }
             try:
-                response = requests.get(url, params=params, timeout=10)
+                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+                response = requests.get(url, params=params, headers=headers, timeout=10)
                 if response.status_code != 200:
                     logger.warning(f"Не вдалося отримати дані з Bybit для звіту {symbol}: HTTP {response.status_code}")
                     continue
