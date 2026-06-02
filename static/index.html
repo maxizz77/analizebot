@@ -966,7 +966,7 @@
                 });
                 const data = await response.json();
                 if (data.status === 'ok') {
-                    showToast(`Додано ${symbol}`);
+                    showToast(data.message || `Додано ${symbol}`);
                     tg.HapticFeedback.notificationOccurred('success');
                     symbolInput.value = '';
                     suggestionsDiv.style.display = 'none';

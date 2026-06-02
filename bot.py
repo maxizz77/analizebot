@@ -129,11 +129,23 @@ async def add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     symbol = context.args[0].upper().strip()
     
     status_msg = await update.message.reply_text(f"⏳ Перевіряю ф'ючерс {symbol} на Bybit...")
-    active_symbols = bybit.get_active_symbols("linear")
+    
+    try:
+        active_symbols = bybit.get_active_symbols("linear")
+    except Exception:
+        active_symbols = set()
+        
+    is_valid = False
+    is_blocked = False
     
     if not active_symbols:
         price = bybit.get_current_price(symbol, "linear")
-        is_valid = price is not None
+        if price is not None:
+            is_valid = True
+        else:
+            # Обидва запити не дали відповіді. Припускаємо мережеве блокування
+            is_valid = True
+            is_blocked = True
     else:
         is_valid = symbol in active_symbols
         if not is_valid and f"{symbol}USDT" in active_symbols:
@@ -149,7 +161,15 @@ async def add_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
         
     db.add_coin(chat_id, symbol)
-    await status_msg.edit_text(f"✅ Ф'ючерс **{symbol}** успішно додано до вашого списку відстеження!", parse_mode="Markdown")
+    if is_blocked:
+        await status_msg.edit_text(
+            f"⚠️ **Ф'ючерс {symbol} додано**, але ми не змогли підтвердити його через Bybit API.\n\n"
+            f"Схоже, сервер Bybit тимчасово блокує запити з нашого хостингу (Cloudflare WAF).\n"
+            f"Ви можете перевірити з'єднання за допомогою команди `/debug`.",
+            parse_mode="Markdown"
+        )
+    else:
+        await status_msg.edit_text(f"✅ Ф'ючерс **{symbol}** успішно додано до вашого списку відстеження!", parse_mode="Markdown")
 
 async def remove_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробник команди /remove <SYMBOL>"""
@@ -566,10 +586,22 @@ async def api_add_coin(request):
         symbol = data.get("symbol").upper().strip()
         
         # Валідація наявності монети на біржі
-        active_symbols = bybit.get_active_symbols("linear")
+        try:
+            active_symbols = bybit.get_active_symbols("linear")
+        except Exception:
+            active_symbols = set()
+            
+        is_blocked = False
+        is_valid = False
+        
         if not active_symbols:
             price = bybit.get_current_price(symbol, "linear")
-            is_valid = price is not None
+            if price is not None:
+                is_valid = True
+            else:
+                # Обидва запити не дали відповіді. Припускаємо мережеве блокування
+                is_valid = True
+                is_blocked = True
         else:
             is_valid = symbol in active_symbols
             if not is_valid and f"{symbol}USDT" in active_symbols:
@@ -580,7 +612,13 @@ async def api_add_coin(request):
             return web.json_response({"status": "error", "message": f"Ф'ючерс {symbol} не знайдено на Bybit"}, status=400)
             
         db.add_coin(chat_id, symbol)
-        logger.info(f"[API] Користувач {chat_id} додав монету {symbol}")
+        logger.info(f"[API] Користувач {chat_id} додав монету {symbol} (заблоковано: {is_blocked})")
+        
+        if is_blocked:
+            return web.json_response({
+                "status": "ok",
+                "message": f"⚠️ {symbol} додано без перевірки (Bybit API заблоковано на сервері). Перевірте з'єднання у боті за допомогою /debug."
+            })
         return web.json_response({"status": "ok"})
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)}, status=400)
